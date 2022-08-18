@@ -1,0 +1,14 @@
+version: "3"
+
+services:
+    web:
+        build:
+            context: ./fastapi
+            args:
+                WEBUSER: www-data
+                WEBGROUP: www-data
+                USER: robinson
+                ENV: dev 
+        ports:
+            - 8000:5000
+# dont forget volume
