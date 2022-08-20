@@ -1,14 +1,67 @@
 version: "3"
 
 services:
-    web:
+    fastapi:
+        container_name: savage-fastapi
         build:
             context: ./fastapi
             args:
-                WEBUSER: www-data
-                WEBGROUP: www-data
-                USER: robinson
-                ENV: dev 
+                WEBUSER: savage
+                WEBGROUP: www-savage
+                ENV: venv
+        depends_on:
+            - psql
+        env_file: dev.env
+        environment:
+           DEBUG: "True"
+        expose: 
+            - 5000
+        networks:
+            - backend-bridge
+        restart: on-failure
+        tty: true
+        stdin_open: true
+
+# dont forget volume
+    nginx:
+        container_name: savage-nginx
+        build:
+            context: ./nginx            
+            args:
+                WEBUSER: savage
+                WEBGROUP: www-savage
+        depends_on: 
+            - fastapi
+        env_file: dev.env
         ports:
-            - 8000:5000
+            - 7000:80
+        networks:
+            - backend-bridge
+
+    psql:
+        container_name: savage-psql
+        build:
+            context: ./postgresql
+        env_file: dev.env
+        environment:
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: example
+            PGPORT: 5432
+            POSTGRES_HOST_AUTH_METHOD: md5
+        expose: 
+            - 5432
+        networks:
+            - backend-bridge
+        volumes:
+            - /tmp/pgdata:/var/lib/postgresql/data
+            # you can link single file if you want
+            - ./psqlinit:/docker-entrypoint-initdb.d/
+        tty: true
+        stdin_open: true
+
+networks:
+    backend-bridge:
+        driver: bridge
+
+# depend, expose, ports
 # dont forget volume
